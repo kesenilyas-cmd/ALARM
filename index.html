@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hatırlatıcı">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Hatırlatıcı</title>
+<style>
+:root{
+  --bg:#f2f2f7;--card:#fff;--text:#111;--sub:#8e8e93;--line:#e5e5ea;--accent:#ff9500;--danger:#ff3b30;--ok:#34c759;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#000;--card:#1c1c1e;--text:#fff;--sub:#8e8e93;--line:#2c2c2e}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text",Roboto,sans-serif}
+body{padding:env(safe-area-inset-top) 0 calc(90px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 6px}
+h1{font-size:32px;margin:0;font-weight:700}
+.add{background:none;border:0;color:var(--accent);font-size:34px;line-height:1;padding:0 4px;cursor:pointer}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--sub);margin:22px 20px 8px;font-weight:600}
+.list{margin:0 16px;background:var(--card);border-radius:14px;overflow:hidden}
+.item{display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);align-items:flex-start}
+.item:last-child{border-bottom:0}
+.time{font-size:30px;font-weight:300;letter-spacing:-.02em;min-width:84px}
+.item.off .time,.item.off .meta .t{opacity:.35}
+.meta{flex:1;min-width:0}
+.meta .t{font-weight:600;overflow-wrap:anywhere}
+.meta .d{color:var(--sub);font-size:14px}
+.meta .rel{color:var(--accent);font-size:13px;margin-top:2px}
+.badge{display:inline-block;font-size:11px;background:var(--line);color:var(--sub);border-radius:6px;padding:1px 6px;margin-left:6px;font-weight:600;vertical-align:middle}
+.acts{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.acts button{border:0;background:var(--line);color:var(--text);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer}
+.acts .del{color:var(--danger)}
+.empty{padding:28px 16px;text-align:center;color:var(--sub)}
+.tools{margin:26px 16px 0;display:grid;gap:10px}
+.btn{border:0;border-radius:12px;padding:13px;font-size:16px;font-weight:600;background:var(--card);color:var(--accent);cursor:pointer;width:100%}
+.btn.primary{background:var(--accent);color:#fff}
+.hint{margin:10px 20px;color:var(--sub);font-size:13px}
+dialog{border:0;border-radius:18px;padding:0;width:min(520px,94vw);background:var(--bg);color:var(--text);max-height:92vh}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+.sheet{padding:16px}
+.sheet header{padding:0 0 10px}
+.sheet h3{margin:0;font-size:18px}
+.field{background:var(--card);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row label{color:var(--text);white-space:nowrap}
+input,select,textarea{font:inherit;color:var(--text);background:transparent;border:0;outline:0;text-align:right;max-width:62%}
+input[type=text],textarea{text-align:left;width:100%;max-width:100%}
+textarea{resize:none;height:60px}
+.two{display:flex;gap:10px}
+.two .btn{color:var(--text)}
+.two .btn.primary{color:#fff}
+#alarm{position:fixed;inset:0;background:linear-gradient(160deg,#ff9500,#ff3b30);color:#fff;z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px}
+#alarm.on{display:flex;animation:pulse 1s infinite}
+@keyframes pulse{50%{filter:brightness(1.15)}}
+#alarm .big{font-size:56px;font-weight:300}
+#alarm .tt{font-size:28px;font-weight:700;margin:6px 0;overflow-wrap:anywhere}
+#alarm .nn{opacity:.9;margin-bottom:34px}
+#alarm button{width:min(320px,80vw);border:0;border-radius:16px;padding:16px;font-size:18px;font-weight:700;margin:6px 0;cursor:pointer}
+#alarm .snz{background:rgba(255,255,255,.25);color:#fff}
+#alarm .stp{background:#fff;color:#ff3b30}
+#toast{position:fixed;left:50%;bottom:calc(30px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#333;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:60;max-width:90vw;text-align:center}
+#toast.on{opacity:1}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Hatırlatıcı</h1>
+  <button class="add" id="btnAdd" aria-label="Yeni hatırlatma">＋</button>
+</header>
+
+<div id="up"></div>
+<div id="done"></div>
+
+<div class="tools">
+  <button class="btn primary" id="btnAll">📅 Hepsini iPhone Takvimi'ne aktar</button>
+  <button class="btn" id="btnNotif">🔔 Bildirimlere izin ver</button>
+  <div class="two">
+    <button class="btn" id="btnExport">Yedekle</button>
+    <button class="btn" id="btnImport">Yedekten yükle</button>
+  </div>
+  <input type="file" id="file" accept="application/json" hidden>
+</div>
+<p class="hint">
+  Uygulama kapalıyken çalan gerçek alarm için hatırlatmayı <b>Takvim'e aktar</b>. iPhone Takvim'i o zaman dilediğin saatte bildirim gönderir.
+  Uygulama açıkken tam ekran alarm ve ses çalar.
+</p>
+
+<dialog id="dlg">
+  <form method="dialog" class="sheet" id="form">
+    <header><h3 id="dlgTitle">Yeni hatırlatma</h3></header>
+    <div class="field"><div class="row"><input type="text" id="fTitle" placeholder="Başlık" required maxlength="120"></div></div>
+    <div class="field">
+      <div class="row"><label for="fWhen">Tarih ve saat</label><input type="datetime-local" id="fWhen" required></div>
+      <div class="row"><label for="fRep">Tekrar</label>
+        <select id="fRep">
+          <option value="none">Hiçbir zaman</option>
+          <option value="daily">Her gün</option>
+          <option value="weekly">Her hafta</option>
+          <option value="monthly">Her ay</option>
+          <option value="yearly">Her yıl</option>
+        </select></div>
+      <div class="row"><label for="fLead">Önceden haber (Takvim)</label>
+        <select id="fLead">
+          <option value="0">Zamanında</option>
+          <option value="10">10 dk önce</option>
+          <option value="60">1 saat önce</option>
+          <option value="1440">1 gün önce</option>
+          <option value="10080">1 hafta önce</option>
+        </select></div>
+    </div>
+    <div class="field"><div class="row"><textarea id="fNote" placeholder="Not (isteğe bağlı)" maxlength="400"></textarea></div></div>
+    <div class="two">
+      <button type="button" class="btn" id="fCancel">Vazgeç</button>
+      <button type="submit" class="btn primary" id="fSave">Kaydet</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="alarm">
+  <div class="big" id="aTime"></div>
+  <div class="tt" id="aTitle"></div>
+  <div class="nn" id="aNote"></div>
+  <button class="snz" id="aSnooze">Ertele (5 dk)</button>
+  <button class="stp" id="aStop">Kapat</button>
+</div>
+<div id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+var $ = function(s){return document.querySelector(s)};
+var KEY = 'hatirlatici.v1';
+var items = [];
+try { items = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch(e){ items = []; }
+var editId = null, ringing = null, audioCtx = null, beepTimer = null;
+
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(items)); }catch(e){} }
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function toLocalInput(ts){
+  var d = new Date(ts);
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]}); }
+function toast(msg){ var t=$('#toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(function(){t.classList.remove('on')},2600); }
+
+var REP = {none:'',daily:'Her gün',weekly:'Her hafta',monthly:'Her ay',yearly:'Her yıl'};
+
+function nextOcc(ts, rep){
+  var d = new Date(ts);
+  if(rep==='daily') d.setDate(d.getDate()+1);
+  else if(rep==='weekly') d.setDate(d.getDate()+7);
+  else if(rep==='monthly'){ var day=d.getDate(); d.setMonth(d.getMonth()+1); if(d.getDate()!==day) d.setDate(0); }
+  else if(rep==='yearly'){ var m=d.getMonth(), dd=d.getDate(); d.setFullYear(d.getFullYear()+1); if(d.getMonth()!==m) d.setDate(0); }
+  return d.getTime();
+}
+
+function fmtDate(ts){
+  return new Date(ts).toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+function fmtTime(ts){
+  return new Date(ts).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+}
+function rel(ts){
+  var diff = ts - Date.now();
+  var past = diff < 0; diff = Math.abs(diff);
+  var m = Math.round(diff/60000), h = Math.round(diff/3600000), d = Math.round(diff/86400000);
+  var s;
+  if(m < 1) s = 'şimdi';
+  else if(m < 60) s = m+' dk';
+  else if(h < 24) s = h+' saat';
+  else if(d < 60) s = d+' gün';
+  else s = Math.round(d/30)+' ay';
+  if(s==='şimdi') return 'şimdi';
+  return past ? s+' önce' : s+' sonra';
+}
+
+function render(){
+  var up = items.filter(function(r){return !r.done}).sort(function(a,b){return (a.snooze||a.at)-(b.snooze||b.at)});
+  var dn = items.filter(function(r){return r.done}).sort(function(a,b){return b.at-a.at});
+  $('#up').innerHTML = '<h2>Yaklaşan</h2>' + (up.length ? '<div class="list">'+up.map(card).join('')+'</div>' : '<div class="list"><div class="empty">Henüz hatırlatma yok.<br>Sağ üstteki ＋ ile ekle.</div></div>');
+  $('#done').innerHTML = dn.length ? '<h2>Tamamlanan</h2><div class="list">'+dn.map(card).join('')+'</div>' : '';
+}
+function card(r){
+  var at = r.snooze || r.at;
+  return '<div class="item'+(r.done?' off':'')+'" data-id="'+r.id+'">'+
+    '<div class="time">'+fmtTime(at)+'</div>'+
+    '<div class="meta"><div class="t">'+esc(r.title)+(r.repeat!=='none'?'<span class="badge">'+REP[r.repeat]+'</span>':'')+'</div>'+
+    '<div class="d">'+fmtDate(at)+'</div>'+
+    (r.note?'<div class="d">'+esc(r.note)+'</div>':'')+
+    (r.done?'':'<div class="rel">'+rel(at)+'</div>')+
+    '<div class="acts"><button data-a="edit">Düzenle</button><button data-a="ics">Takvim</button>'+
+    (r.done?'<button data-a="redo">Tekrar kur</button>':'')+
+    '<button class="del" data-a="del">Sil</button></div></div></div>';
+}
+
+document.addEventListener('click', function(e){
+  var b = e.target.closest('button[data-a]');
+  if(!b) return;
+  var id = b.closest('.item').dataset.id;
+  var r = items.find(function(x){return x.id===id});
+  if(!r) return;
+  var a = b.dataset.a;
+  if(a==='del'){ if(confirm('"'+r.title+'" silinsin mi?')){ items = items.filter(function(x){return x.id!==id}); save(); render(); } }
+  else if(a==='edit') openDlg(r);
+  else if(a==='ics') downloadIcs([r], 'hatirlatma.ics');
+  else if(a==='redo'){ openDlg(r, true); }
+});
+
+/* ---------- Form ---------- */
+var dlg = $('#dlg');
+function openDlg(r, redo){
+  unlockAudio();
+  editId = (r && !redo) ? r.id : null;
+  $('#dlgTitle').textContent = editId ? 'Hatırlatmayı düzenle' : 'Yeni hatırlatma';
+  var base;
+  if(r){ base = r.snooze||r.at; if(redo || base < Date.now()) base = Date.now()+3600000; }
+  else { base = Date.now()+3600000; }
+  var d = new Date(base); d.setMinutes(d.getMinutes() + (r?0:(60 - d.getMinutes())%60 ), 0, 0);
+  if(!r){ d = new Date(); d.setHours(d.getHours()+1,0,0,0); }
+  $('#fTitle').value = r ? r.title : '';
+  $('#fWhen').value = toLocalInput(r ? base : d.getTime());
+  $('#fRep').value = r ? r.repeat : 'none';
+  $('#fLead').value = r ? String(r.lead||0) : '0';
+  $('#fNote').value = r ? (r.note||'') : '';
+  dlg.showModal();
+  setTimeout(function(){ if(!r) $('#fTitle').focus(); }, 50);
+}
+$('#btnAdd').onclick = function(){ openDlg(null); };
+$('#fCancel').onclick = function(){ dlg.close(); };
+$('#form').addEventListener('submit', function(e){
+  var title = $('#fTitle').value.trim();
+  var at = new Date($('#fWhen').value).getTime();
+  if(!title || isNaN(at)) return;
+  var rep = $('#fRep').value, lead = parseInt($('#fLead').value,10)||0, note = $('#fNote').value.trim();
+  if(editId){
+    var r = items.find(function(x){return x.id===editId});
+    if(r){ r.title=title; r.at=at; r.start=at; r.repeat=rep; r.lead=lead; r.note=note; r.snooze=null; r.done=false; }
+  } else {
+    items.push({id:uid(), title:title, note:note, at:at, start:at, repeat:rep, lead:lead, snooze:null, done:false});
+  }
+  save(); render();
+  toast('Kaydedildi. Takvim\'e de aktarmayı unutma.');
+});
+
+/* ---------- Alarm ---------- */
+function unlockAudio(){
+  try{
+    if(!audioCtx){ var AC = window.AudioContext||window.webkitAudioContext; if(AC) audioCtx = new AC(); }
+    if(audioCtx && audioCtx.state==='suspended') audioCtx.resume();
+  }catch(e){}
+}
+document.addEventListener('touchstart', unlockAudio, {passive:true});
+document.addEventListener('click', unlockAudio);
+
+function beep(){
+  if(!audioCtx) return;
+  try{
+    var t = audioCtx.currentTime;
+    [0, 0.22, 0.44].forEach(function(off){
+      var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'square'; o.frequency.value = 880;
+      g.gain.setValueAtTime(0.0001, t+off);
+      g.gain.exponentialRampToValueAtTime(0.4, t+off+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+off+0.16);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t+off); o.stop(t+off+0.18);
+    });
+  }catch(e){}
+}
+function startSound(){
+  stopSound(); beep();
+  beepTimer = setInterval(function(){ beep(); if(navigator.vibrate) navigator.vibrate([300,150,300]); }, 1500);
+}
+function stopSound(){ if(beepTimer){ clearInterval(beepTimer); beepTimer=null; } if(navigator.vibrate) navigator.vibrate(0); }
+
+function notify(r){
+  if(!('Notification' in window) || Notification.permission!=='granted') return;
+  var opts = {body: r.note || fmtTime(r.snooze||r.at), tag:'rem-'+r.id, requireInteraction:true, icon:'icon-192.png'};
+  try{
+    if(navigator.serviceWorker && navigator.serviceWorker.controller){
+      navigator.serviceWorker.ready.then(function(reg){ reg.showNotification(r.title, opts); });
+    } else new Notification(r.title, opts);
+  }catch(e){}
+}
+
+function startRing(r){
+  ringing = r;
+  $('#aTime').textContent = fmtTime(r.snooze||r.at);
+  $('#aTitle').textContent = r.title;
+  $('#aNote').textContent = r.note || '';
+  $('#alarm').classList.add('on');
+  startSound(); notify(r);
+}
+function endRing(){ $('#alarm').classList.remove('on'); stopSound(); ringing = null; }
+
+$('#aStop').onclick = function(){
+  var r = ringing; if(!r) return;
+  r.snooze = null;
+  if(r.repeat!=='none'){
+    var n = nextOcc(r.at, r.repeat), guard = 0;
+    while(n <= Date.now() && guard++ < 5000) n = nextOcc(n, r.repeat);
+    r.at = n;
+  } else r.done = true;
+  save(); endRing(); render();
+};
+$('#aSnooze').onclick = function(){
+  var r = ringing; if(!r) return;
+  r.snooze = Date.now() + 5*60000;
+  save(); endRing(); render();
+};
+
+function tick(){
+  if(ringing) return;
+  var now = Date.now();
+  var due = items.filter(function(r){return !r.done && (r.snooze||r.at) <= now})
+                 .sort(function(a,b){return (a.snooze||a.at)-(b.snooze||b.at)})[0];
+  if(due) startRing(due);
+}
+setInterval(function(){ tick(); }, 1000);
+setInterval(function(){ if(!dlg.open && !ringing) render(); }, 30000);
+document.addEventListener('visibilitychange', function(){ if(!document.hidden){ tick(); if(!dlg.open) render(); } });
+
+/* ---------- ICS (Takvim) ---------- */
+function icsEsc(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;'); }
+function utc(ts){ return new Date(ts).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,''); }
+function fold(line){
+  var out = [], s = line;
+  while(s.length > 73){ out.push(s.slice(0,73)); s = ' ' + s.slice(73); }
+  out.push(s); return out.join('\r\n');
+}
+function buildIcs(list){
+  var L = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Hatirlatici//TR','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+  var stamp = utc(Date.now());
+  list.forEach(function(r){
+    var start = r.start || r.at;
+    L.push('BEGIN:VEVENT');
+    L.push('UID:'+r.id+'@hatirlatici');
+    L.push('DTSTAMP:'+stamp);
+    L.push('DTSTART:'+utc(start));
+    L.push('DTEND:'+utc(start+15*60000));
+    L.push(fold('SUMMARY:'+icsEsc(r.title)));
+    if(r.note) L.push(fold('DESCRIPTION:'+icsEsc(r.note)));
+    var f = {daily:'DAILY',weekly:'WEEKLY',monthly:'MONTHLY',yearly:'YEARLY'}[r.repeat];
+    if(f) L.push('RRULE:FREQ='+f);
+    L.push('BEGIN:VALARM','ACTION:DISPLAY',fold('DESCRIPTION:'+icsEsc(r.title)),'TRIGGER:PT0S','END:VALARM');
+    if(r.lead>0){
+      L.push('BEGIN:VALARM','ACTION:DISPLAY',fold('DESCRIPTION:'+icsEsc(r.title)),'TRIGGER:-PT'+r.lead+'M','END:VALARM');
+    }
+    L.push('END:VEVENT');
+  });
+  L.push('END:VCALENDAR');
+  return L.join('\r\n');
+}
+function downloadIcs(list, name){
+  if(!list.length){ toast('Aktarılacak hatırlatma yok.'); return; }
+  var blob = new Blob([buildIcs(list)], {type:'text/calendar;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  if(ios){ window.location.href = url; }
+  else { var a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); }
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+}
+$('#btnAll').onclick = function(){
+  downloadIcs(items.filter(function(r){return !r.done}), 'hatirlaticilar.ics');
+};
+
+/* ---------- Bildirim / yedek ---------- */
+$('#btnNotif').onclick = function(){
+  if(!('Notification' in window)){ toast('Bu tarayıcı bildirimleri desteklemiyor. iPhone\'da önce ana ekrana ekle.'); return; }
+  Notification.requestPermission().then(function(p){ toast(p==='granted'?'Bildirimler açık':'İzin verilmedi'); });
+};
+$('#btnExport').onclick = function(){
+  var blob = new Blob([JSON.stringify(items,null,2)], {type:'application/json'});
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'hatirlatici-yedek.json';
+  document.body.appendChild(a); a.click(); a.remove();
+};
+$('#btnImport').onclick = function(){ $('#file').click(); };
+$('#file').onchange = function(e){
+  var f = e.target.files[0]; if(!f) return;
+  var rd = new FileReader();
+  rd.onload = function(){
+    try{
+      var data = JSON.parse(rd.result);
+      if(!Array.isArray(data)) throw 0;
+      var ids = {}; items.forEach(function(x){ids[x.id]=1});
+      data.forEach(function(x){ if(x && x.id && x.title && x.at && !ids[x.id]) items.push(x); });
+      save(); render(); toast('Yedek yüklendi');
+    }catch(err){ toast('Geçersiz yedek dosyası'); }
+  };
+  rd.readAsText(f); e.target.value='';
+};
+
+/* ---------- Başlat ---------- */
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
+render(); tick();
+})();
+</script>
+</body>
+</html>
